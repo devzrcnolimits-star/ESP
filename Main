@@ -1,0 +1,76 @@
+local Runservice = game:GetService("RunService")
+
+local PlayerService = game:GetService("Players")
+local LocalPlayer = PlayerService.LocalPlayer
+
+local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid") 
+local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
+
+local camera = workspace.CurrentCamera
+
+local function ESP(player)
+local ESPconnection;
+
+local Drawings = {
+    Box = Drawing.new("Square"),
+    BoxOutline = Drawing.new("Square")
+}
+
+local UpdateESP = function()
+    ESPconnection = Runservice.RenderStepped:Connect(function()
+        local character = player.Character
+
+        if Character then
+            local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
+            if humanoidRootPart then
+                local Position, OnScreen = camera:WorldToViewportPoint(humanoidRootPart.Position)
+                if OnScreen then
+                    local scale = 1 /(Position.Z * math.tan(math.rad(camera.FieldOfView * 0.5)) * 2) * 1000
+                    local width, height = math.floor(4.5 * scale), math.floor(6 * scale)
+                    local x, y = math.floor(Position.X), math.floor(Position.Y)
+                    local XPosition, YPosition =  math.floor(x - width * 0.5), math.floor((y - height * 0.5) + (0.5 * scale))
+
+                    Drawings.Box.Size = Vector2.new(width,height)
+                    Drawings.Box.Position = Vector2.new(XPosition, YPosition)
+                    Drawings.Box.Visible = true 
+                    Drawings.Box.Color = Color3.fromRGB(77, 39, 245)
+                    Drawings.Box.Thickness = 1
+
+                    Drawings.BoxOutline.Size = Vector2.new(width,height)
+                    Drawings.BoxOutline.Position = Vector2.new(XPosition, YPosition)
+                    Drawings.BoxOutline.Visible = true 
+                    Drawings.BoxOutline.Color = Color3.fromRGB(0, 0, 0)
+                    Drawings.BoxOutline.Thickness = 2
+
+                    Drawings.BoxOutline.ZIndex = 1 
+                     Drawings.Box.ZIndex = 2
+                else
+                    Drawings.Box.Visible = false
+                    Drawings.BoxOutline.Visible = false
+                    end
+                else
+                    Drawings.Box.Visible = false
+                    Drawings.BoxOutline.Visible = false
+                end
+             else
+                     Drawings.Box.Visible = false
+                    Drawings.BoxOutline.Visible = false
+            end
+        end)
+    end
+
+    coroutine.wrap(UpdateESP)()
+end
+
+for _, v in pairs(PlayerService:GetPlayers()) do
+    if v.Name ~= LocalPlayer.Name then
+        coroutine.wrap(ESP)(v)
+    end
+end
+
+PlayerService.PlayerAdded:Connect(function(v)
+    task.delay(1, function()
+        coroutine.wrap(ESP)(v)
+    end)
+end)
